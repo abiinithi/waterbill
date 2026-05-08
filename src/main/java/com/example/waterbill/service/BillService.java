@@ -13,8 +13,13 @@ public class BillService {
 
     private final WaterBillConfig config;
 
+    private final io.micrometer.core.instrument.MeterRegistry meterRegistry;
+
     // 🔥 MAIN METHOD (Controller will call this)
     public WaterBillResponse calculateBill(WaterBillRequest request) {
+
+        meterRegistry.counter("waterbill.calculations.total",
+                "bhk", String.valueOf(request.bhk())).increment();
 
         // 1. Validate BHK
         Integer residentCount = config.getBhkToResidentCount().get(request.bhk());
@@ -46,17 +51,22 @@ public class BillService {
         int totalWater = residentWater + guestWater;
 
         // 5. Calculate bill
-        int guestBill = calculateGuestWaterBill(guestWater);
-        int residentBill = calculateResidentWaterBill(
-                residentWater,
-                corporationRatio,
-                borewellRatio,
-                totalRatio
-        );
+        return meterRegistry.timer("waterbill.calculation.time").record(() -> {
+            int guestBill = calculateGuestWaterBill(guestWater);
+            int residentBill = calculateResidentWaterBill(
+                    residentWater,
+                    corporationRatio,
+                    borewellRatio,
+                    totalRatio
+            );
 
-        int totalBill = guestBill + residentBill;
+            int totalBill = guestBill + residentBill;
 
-        return new WaterBillResponse(totalWater, totalBill);
+            meterRegistry.counter("waterbill.revenue.total").increment(totalBill);
+
+            return new WaterBillResponse(totalWater, totalBill);
+
+        });
     }
 
     // Tanker (guest) water bill using slab logic
