@@ -5,8 +5,10 @@ import com.example.waterbill.model.WaterBillRequest;
 import com.example.waterbill.model.WaterBillResponse;
 import com.example.waterbill.exception.WaterBillException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class BillService {
@@ -17,6 +19,9 @@ public class BillService {
 
     // 🔥 MAIN METHOD (Controller will call this)
     public WaterBillResponse calculateBill(WaterBillRequest request) {
+
+        log.info("Processing bill: BHK={}, Guests={}, Ratio={}",
+                request.bhk(), request.guests(), request.ratio());
 
         meterRegistry.counter("waterbill.calculations.total",
                 "bhk", String.valueOf(request.bhk())).increment();
@@ -63,6 +68,9 @@ public class BillService {
             int totalBill = guestBill + residentBill;
 
             meterRegistry.counter("waterbill.revenue.total").increment(totalBill);
+
+            log.debug("Calculated total water: {}L (Resident: {}L, Guest: {}L)",
+                    totalWater, residentWater, guestWater);
 
             return new WaterBillResponse(totalWater, totalBill);
 
