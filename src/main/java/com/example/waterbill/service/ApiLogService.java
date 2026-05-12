@@ -14,7 +14,9 @@ public class ApiLogService {
 
     private final ApiLogRepository repository;
 
-    public void log(String endpoint,
+    public void log(String clientName,
+                    String role,
+                    String endpoint,
                     String method,
                     String request,
                     String response,
@@ -22,6 +24,8 @@ public class ApiLogService {
                     String error) {
 
         ApiLog log = new ApiLog();
+        log.setClientName(clientName);
+        log.setRole(role);
         log.setEndpoint(endpoint);
         log.setMethod(method);
         log.setRequestBody(request);

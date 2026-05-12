@@ -16,6 +16,9 @@ public class ApiLog {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private String clientName;
+    private String role;
+
     private String endpoint;
     private String method;
     private String status;

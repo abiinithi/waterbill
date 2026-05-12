@@ -26,36 +26,28 @@ public class WaterBillController {
             @RequestBody WaterBillRequest request,
             HttpServletRequest httpRequest) {
 
-        String endpoint = httpRequest.getRequestURI();
-        String method = httpRequest.getMethod();
+        // Retrieve attributes set by the filter
+        String role = (String) httpRequest.getAttribute("userRole");
+        String clientName = (String) httpRequest.getAttribute("clientName");
 
-        try {
-            WaterBillResponse response = billService.calculateBill(request);
+        // Logic
+        WaterBillResponse response = billService.calculateBill(request);
 
-            logService.log(
-                    endpoint,
-                    method,
-                    request.toString(),
-                    response.toString(),
-                    "SUCCESS",
-                    null
-            );
+        // Success Log
+        logService.log(
+                clientName,
+                role,
+                httpRequest.getRequestURI(),
+                httpRequest.getMethod(),
+                request.toString(),
+                response.toString(),
+                "SUCCESS",
+                null
+        );
 
-            return response;
-
-        } catch (Exception e) {
-
-            logService.log(
-                    endpoint,
-                    method,
-                    request.toString(),
-                    null,
-                    "FAILURE",
-                    e.getMessage()
-            );
-
-            throw e;
-        }
+        // Role-based masking
+        return "VIEWER".equals(role)
+                ? new WaterBillResponse(0, response.totalBill())
+                : response;
     }
-
 }
