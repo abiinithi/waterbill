@@ -42,7 +42,8 @@ public class WaterBillController {
                 request.toString(),
                 response.toString(),
                 "SUCCESS",
-                null
+                null,
+                200
         );
 
         // Role-based masking

@@ -1,6 +1,7 @@
 package com.example.waterbill.filter;
 
 import com.example.waterbill.entity.ApiKey;
+import com.example.waterbill.exception.ErrorResponse;
 import com.example.waterbill.repository.ApiKeyRepository;
 import com.example.waterbill.service.ApiLogService;
 import jakarta.servlet.DispatcherType;
@@ -44,14 +45,14 @@ public class ApiKeyFilter extends OncePerRequestFilter {
         // CASE 1: Actuator Access (Strictly for ADMIN)
         if (path.contains("actuator")) {
             if (apiKeyOpt.isPresent() && "ADMIN".equals(apiKeyOpt.get().getRole().name())) {
-                logToDatabase(request, "SUCCESS", "Actuator Access", apiKeyOpt.get(), null);
+                logToDatabase(request, "SUCCESS", "Actuator Access", apiKeyOpt.get(), null, 200);
                 filterChain.doFilter(request, response);
                 return;
             } else {
                 String roleName = apiKeyOpt.map(k -> k.getRole().name()).orElse("GUEST");
                 log.error("Access Denied: Role {} tried to access metrics.", roleName);
 
-                logToDatabase(request, "FAILURE", null, apiKeyOpt.orElse(null), "Forbidden: Non-admin metrics access");
+                logToDatabase(request, "FAILURE", null, apiKeyOpt.orElse(null), "Forbidden: Non-admin metrics access", 403);
                 sendErrorResponse(response, HttpServletResponse.SC_FORBIDDEN, "Access Denied: Admins Only");
                 return;
             }
@@ -59,7 +60,7 @@ public class ApiKeyFilter extends OncePerRequestFilter {
 
         // CASE 2: Invalid/Missing Key for other protected endpoints
         if (apiKeyOpt.isEmpty()) {
-            logToDatabase(request, "FAILURE", null, null, "Unauthorized: Invalid API Key");
+            logToDatabase(request, "FAILURE", null, null, "Unauthorized: Invalid API Key", 401);
             sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Invalid or Missing API Key");
             return;
         }
@@ -76,7 +77,7 @@ public class ApiKeyFilter extends OncePerRequestFilter {
      * Aligned with ApiLogService.log order:
      * (endpoint, method, requestBody, responseBody, status, error, role, clientName)
      */
-    private void logToDatabase(HttpServletRequest request, String status, String response, ApiKey key, String error) {
+    private void logToDatabase(HttpServletRequest request, String status, String response, ApiKey key, String error, Integer httpStatus) {
 
         logService.log(
                 key != null ? key.getClientName() : "UNKNOWN",  // client_name
@@ -86,13 +87,32 @@ public class ApiKeyFilter extends OncePerRequestFilter {
                 "Filter Interception",                 // requestBody (fixed label)
                 response,                                         // responseBody (detailed note)
                 status,                                       // status
-                error
+                error,
+                httpStatus
         );
     }
 
     private void sendErrorResponse(HttpServletResponse response, int status, String message) throws IOException {
         response.setStatus(status);
         response.setContentType("application/json");
-        response.getWriter().write("{\"error\": \"" + message + "\"}");
+
+        // Create the record manually
+        ErrorResponse errorBody = new ErrorResponse(
+                status,
+                status == 401 ? "Unauthorized" : "Forbidden",
+                message,
+                System.currentTimeMillis()
+        );
+
+        // Convert to JSON string (Manually formatting to avoid adding more dependencies)
+        String jsonResponse = String.format(
+                "{\"status\": %d, \"error\": \"%s\", \"message\": \"%s\", \"timestamp\": %d}",
+                errorBody.status(),
+                errorBody.error(),
+                errorBody.message(),
+                errorBody.timestamp()
+        );
+
+        response.getWriter().write(jsonResponse);
     }
 }

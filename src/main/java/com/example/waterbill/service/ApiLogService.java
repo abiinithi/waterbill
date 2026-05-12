@@ -21,7 +21,8 @@ public class ApiLogService {
                     String request,
                     String response,
                     String status,
-                    String error) {
+                    String error,
+                    Integer httpStatus) {
 
         ApiLog log = new ApiLog();
         log.setClientName(clientName);
@@ -32,6 +33,7 @@ public class ApiLogService {
         log.setResponseBody(response);
         log.setStatus(status);
         log.setErrorMessage(error);
+        log.setHttpStatus(httpStatus);
         log.setTimestamp(LocalDateTime.now());
 
         repository.save(log);

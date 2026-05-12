@@ -24,6 +24,7 @@ public class ApiLog {
     private String status;
 
     private String errorMessage;
+    private Integer httpStatus;
 
     private LocalDateTime timestamp;
 
