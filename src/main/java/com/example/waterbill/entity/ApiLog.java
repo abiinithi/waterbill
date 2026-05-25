@@ -28,10 +28,10 @@ public class ApiLog {
 
     private LocalDateTime timestamp;
 
-    @Lob
+    @Column(columnDefinition = "LONGTEXT")
     private String requestBody;
 
-    @Lob
+    @Column(columnDefinition = "LONGTEXT")
     private String responseBody;
 
 }
