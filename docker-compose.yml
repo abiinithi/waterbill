@@ -1,20 +1,11 @@
-version: '3'
-services:
-  app:
-    image: waterbill-app:latest
-    container_name: waterbill-service
-    ports:
-      - "8080:8080"
-    environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://192.168.10.86:3307/my_app_db?allowPublicKeyRetrieval=true&useSSL=false
-      - SPRING_DATASOURCE_USERNAME=user_name
-      - SPRING_DATASOURCE_PASSWORD=user_password
-      - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.MySQLDialect
-      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+version: '3.8'
 
+services:
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
+    networks:
+      - waterbill-net
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
@@ -23,7 +14,11 @@ services:
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
+    networks:
+      - waterbill-net
     ports:
       - "3000:3000"
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin # You can change this later
+
+networks:
+  waterbill-net:
+    external: true

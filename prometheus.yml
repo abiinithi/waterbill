@@ -1,12 +1,10 @@
 global:
   scrape_interval: 5s
-
 scrape_configs:
   - job_name: 'waterbill-app'
     metrics_path: '/actuator/prometheus'
     static_configs:
-      - targets: ['192.168.10.86:8080']
-    # Placing http_config at the same level as static_configs
-    http_config:
-      headers:
-        x-api-key: "admin_key_789"
+      - targets: ['waterbill-service:8080']    # ← change 'app' to your host IP
+    authorization:
+      type: Bearer
+      credentials: "admin_key_789"

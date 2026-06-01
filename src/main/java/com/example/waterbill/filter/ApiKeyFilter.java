@@ -40,6 +40,13 @@ public class ApiKeyFilter extends OncePerRequestFilter {
         String path = request.getRequestURI();
         String keyValue = request.getHeader("x-api-key");
 
+        if (keyValue == null) {
+            String authHeader = request.getHeader("Authorization");
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                keyValue = authHeader.substring(7);
+            }
+        }
+
         Optional<ApiKey> apiKeyOpt = apiKeyRepository.findByKeyValueAndActiveTrue(keyValue);
 
         // CASE 1: Actuator Access (Strictly for ADMIN)
